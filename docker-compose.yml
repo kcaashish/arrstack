@@ -1,0 +1,208 @@
+name: media-stack
+networks:
+  media-network:
+    driver: bridge
+services:
+  ####################################################################
+  # Reverse Proxy
+  ####################################################################
+  caddy:
+    # image: caddy:latest
+    build:
+      context: .
+      dockerfile: inline-caddy.Dockerfile
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${MEDIA_DIR}/appdata/caddy/data:/data
+      - ${MEDIA_DIR}/appdata/caddy/config:/config
+    depends_on:
+      - jellyfin
+      - seerr
+    networks:
+      - media-network
+  ####################################################################
+  # Jellyfin
+  ####################################################################
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:10.11.11
+    container_name: jellyfin
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${MEDIA_DIR}/appdata/jellyfin:/config
+      - ${MEDIA_DIR}/media:/data/media
+    devices:
+      - /dev/dri:/dev/dri
+    networks:
+      - media-network
+  ####################################################################
+  # Seerr
+  ####################################################################
+  seerr:
+    image: ghcr.io/seerr-team/seerr:v3.3.0
+    container_name: seerr
+    init: true
+    environment:
+      TZ: ${TZ}
+      LOG_LEVEL: debug
+    volumes:
+      - ${MEDIA_DIR}/appdata/seerr:/app/config
+    depends_on:
+      - jellyfin
+    restart: unless-stopped
+    networks:
+      - media-network
+  ####################################################################
+  # qBittorrent
+  ####################################################################
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.2.3
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      WEBUI_PORT: 8080
+    volumes:
+      - ${MEDIA_DIR}/appdata/qbittorrent:/config
+      - ${MEDIA_DIR}/torrents:/data/torrents
+    ports:
+      - "6881:6881"
+      - "6881:6881/udp"
+      - "8080:8080"
+    networks:
+      - media-network
+  ####################################################################
+  # Prowlarr
+  ####################################################################
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:2.4.0
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${MEDIA_DIR}/appdata/prowlarr:/config
+    depends_on:
+      - qbittorrent
+    ports:
+      - "9696:9696"
+    networks:
+      - media-network
+  ####################################################################
+  # Sonarr
+  ####################################################################
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:4.0.19
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${MEDIA_DIR}/appdata/sonarr:/config
+      - ${MEDIA_DIR}/torrents:/data/torrents
+      - ${MEDIA_DIR}/media/tv:/data/media/tv
+    depends_on:
+      - qbittorrent
+      - prowlarr
+    ports:
+      - "8989:8989"
+    networks:
+      - media-network
+  ####################################################################
+  # Radarr
+  ####################################################################
+  radarr:
+    image: lscr.io/linuxserver/radarr:6.3.0
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${MEDIA_DIR}/appdata/radarr:/config
+      - ${MEDIA_DIR}/torrents:/data/torrents
+      - ${MEDIA_DIR}/media/movies:/data/media/movies
+    depends_on:
+      - qbittorrent
+      - prowlarr
+    ports:
+      - "7878:7878"
+    networks:
+      - media-network
+  ####################################################################
+  # Portainer
+  ####################################################################
+  # portainer:
+  #   image: portainer/portainer-ce:lts
+  #   container_name: portainer
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ${MEDIA_DIR}/appdata/portainer:/data
+  #   ports:
+  #     - "9443:9443"
+  #   networks:
+  #     - media-network
+  #####################################################################
+  # Flaresolverr
+  #####################################################################
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.5.0
+    container_name: flaresolverr
+    environment:
+      LOG_LEVEL: info
+      TZ: ${TZ}
+    networks:
+      - media-network
+    ports:
+      - "8191:8191"
+    restart: unless-stopped
+  #####################################################################
+  # Bazarr
+  #####################################################################
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:1.6.0
+    container_name: bazarr
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    volumes:
+      - ${MEDIA_DIR}/appdata/bazarr:/config
+      - ${MEDIA_DIR}/media:/data/media # Crucial: Must be identical to Radarr/Sonarr mappings
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+    networks:
+      - media-network # Change this to match your docker network name
+  ####################################################################
+  # Watchtower
+  ####################################################################
+  # watchtower:
+  #   image: containrrr/watchtower
+  #   container_name: watchtower
+  #   restart: unless-stopped
+  #   environment:
+  #     TZ: ${TZ}
+  #     WATCHTOWER_CLEANUP: "true"
+  #     WATCHTOWER_SCHEDULE: "0 0 4 * * *"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
