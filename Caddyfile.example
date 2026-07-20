@@ -1,15 +1,7 @@
-(cloudflare_tls) {
-    tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-    }
-}
-
-jf.example.com {
-    import cloudflare_tls
+http://jf.example.com {
     reverse_proxy jellyfin:8096
 }
 
-rq.example.com {
-    import cloudflare_tls
+http://rq.example.com {
     reverse_proxy seerr:5055
 }

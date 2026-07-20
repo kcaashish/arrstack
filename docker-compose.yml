@@ -7,18 +7,18 @@ services:
   # Reverse Proxy
   ####################################################################
   caddy:
-    # image: caddy:latest
-    build:
-      context: .
-      dockerfile: inline-caddy.Dockerfile
+    image: caddy:2.11.4-alpine
+    # build:
+    #   context: .
+    #   dockerfile: inline-caddy.Dockerfile
     container_name: caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
-    environment:
-      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    # environment:
+    #   CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ${MEDIA_DIR}/appdata/caddy/data:/data
@@ -206,3 +206,18 @@ services:
   #     WATCHTOWER_SCHEDULE: "0 0 4 * * *"
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
+  #####################################################################
+  # Cloudflared
+  #####################################################################
+  cloudflared:
+    image: cloudflare/cloudflared:2026.7.2
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+      TZ: ${TZ}
+    depends_on:
+      - caddy
+    networks:
+      - media-network
