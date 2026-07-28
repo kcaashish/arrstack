@@ -14,6 +14,7 @@ A lightweight, automated media management stack powered by Docker Compose.
 | **Radarr**      | Movie acquisition & library management                  |
 | **Sonarr**      | TV show acquisition & library management                |
 | **qBittorrent** | Torrent download client                                 |
+| **wud**         | Monitor stack for version updates & notify              |
 | **Caddy**       | Reverse proxy with automatic SSL/TLS via Cloudflare DNS |
 
 ---
@@ -62,6 +63,7 @@ data/
 │   ├── sonarr/
 │   ├── radarr/
 │   ├── qbittorrent/
+│   ├── wud/
 │   └── bazarr/
 ├── torrents/
 │   ├── movies/
