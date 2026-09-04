@@ -26,6 +26,7 @@ services:
     depends_on:
       - jellyfin
       - seerr
+      - audiobookshelf
     networks:
       - media-network
     labels:
@@ -48,6 +49,25 @@ services:
       - ${MEDIA_DIR}/media:/data/media
     devices:
       - /dev/dri:/dev/dri
+    networks:
+      - media-network
+    labels:
+      - "wud.tag.include=^\\d+\\.\\d+\\.\\d+$"
+  ####################################################################
+  # Audiobookshelf
+  ####################################################################
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:2.36.0
+    container_name: audiobookshelf
+    restart: unless-stopped
+    user: "${PUID}:${PGID}"
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - ${MEDIA_DIR}/appdata/audiobookshelf/config:/config
+      - ${MEDIA_DIR}/appdata/audiobookshelf/metadata:/metadata
+      - ${MEDIA_DIR}/media/audiobooks:/audiobooks
+      - ${MEDIA_DIR}/media/podcasts:/podcasts
     networks:
       - media-network
     labels:

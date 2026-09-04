@@ -9,6 +9,7 @@ A lightweight, automated media management stack powered by Docker Compose.
 | Service         | Purpose                                                 |
 | :-------------- | :------------------------------------------------------ |
 | **Jellyfin**    | Self-hosted media server & streaming                    |
+| **Audiobookshelf** | Self-hosted audiobook & podcast server                |
 | **Seerr**       | Media request & discovery portal for users              |
 | **Prowlarr**    | Indexer management (Torrents/Usenet)                    |
 | **Radarr**      | Movie acquisition & library management                  |
@@ -58,6 +59,7 @@ data/
 ├── appdata/
 │   ├── caddy/
 │   ├── jellyfin/
+│   ├── audiobookshelf/
 │   ├── seerr/
 │   ├── prowlarr/
 │   ├── sonarr/
@@ -70,7 +72,9 @@ data/
 │   └── tv/
 └── media/
     ├── movies/
-    └── tv/
+    ├── tv/
+    ├── audiobooks/
+    └── podcasts/
 
 ```
 
