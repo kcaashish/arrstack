@@ -12,11 +12,14 @@ A lightweight, automated media management stack powered by Docker Compose.
 | **Audiobookshelf** | Self-hosted audiobook & podcast server                |
 | **Seerr**       | Media request & discovery portal for users              |
 | **Prowlarr**    | Indexer management (Torrents/Usenet)                    |
+| **Flaresolverr** | Proxy for indexers behind Cloudflare challenges        |
 | **Radarr**      | Movie acquisition & library management                  |
 | **Sonarr**      | TV show acquisition & library management                |
+| **Bazarr**      | Subtitle acquisition for the Sonarr/Radarr libraries    |
 | **qBittorrent** | Torrent download client                                 |
 | **wud**         | Monitor stack for version updates & notify              |
-| **Caddy**       | Reverse proxy with automatic SSL/TLS via Cloudflare DNS |
+| **Caddy**       | Reverse proxy for the public services, plain HTTP       |
+| **Cloudflared** | Outbound tunnel to Cloudflare, for access without a forwarded port |
 
 ---
 
@@ -99,6 +102,37 @@ docker exec sonarr sh -c 'touch /data/torrents/.hltest &&
 
 `exit=0` means imports will hardlink. `Cross-device link` means they're being
 copied and the library is using twice the space it needs.
+
+---
+
+## 🔑 Access
+
+Three paths in, aimed at different people.
+
+| Path | Reaches | For |
+| :--- | :------ | :-- |
+| **Cloudflare Tunnel** | Jellyfin, Seerr, Audiobookshelf, through Caddy | Anyone the server is shared with |
+| **Tailscale** | Every service, on its published port | Me, from anywhere |
+| **LAN** | Every service, on its published port | Me, when I'm next to it |
+
+`cloudflared` dials out to Cloudflare and holds the connection open, so nothing
+is forwarded and the router is untouched. That matters on a residential
+connection with no publicly routable address, where port forwarding has nothing
+to forward to. TLS terminates at Cloudflare's edge, which is why Caddy serves
+plain `http://` internally and needs no certificate of its own.
+
+**Tailscale is not in this compose file.** It installs on the host rather than
+as a container:
+
+```bash
+# install per https://tailscale.com/download/linux, then
+sudo tailscale up
+```
+
+The admin interfaces (Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, wud)
+publish their ports straight to the host and are not proxied by Caddy. On a
+headless machine that makes Tailscale how they get reached at all, including for
+their first-run setup wizards.
 
 ---
 
