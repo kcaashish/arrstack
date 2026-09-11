@@ -46,7 +46,7 @@ services:
       TZ: ${TZ}
     volumes:
       - ${MEDIA_DIR}/appdata/jellyfin:/config
-      - ${MEDIA_DIR}/media:/data/media
+      - ${MEDIA_DIR}/library/media:/data/media
     devices:
       - /dev/dri:/dev/dri
     networks:
@@ -66,8 +66,8 @@ services:
     volumes:
       - ${MEDIA_DIR}/appdata/audiobookshelf/config:/config
       - ${MEDIA_DIR}/appdata/audiobookshelf/metadata:/metadata
-      - ${MEDIA_DIR}/media/audiobooks:/audiobooks
-      - ${MEDIA_DIR}/media/podcasts:/podcasts
+      - ${MEDIA_DIR}/library/media/audiobooks:/audiobooks
+      - ${MEDIA_DIR}/library/media/podcasts:/podcasts
     networks:
       - media-network
     labels:
@@ -105,7 +105,7 @@ services:
       WEBUI_PORT: 8080
     volumes:
       - ${MEDIA_DIR}/appdata/qbittorrent:/config
-      - ${MEDIA_DIR}/torrents:/data/torrents
+      - ${MEDIA_DIR}/library/torrents:/data/torrents
     ports:
       - "6881:6881"
       - "6881:6881/udp"
@@ -148,8 +148,7 @@ services:
       TZ: ${TZ}
     volumes:
       - ${MEDIA_DIR}/appdata/sonarr:/config
-      - ${MEDIA_DIR}/torrents:/data/torrents
-      - ${MEDIA_DIR}/media/tv:/data/media/tv
+      - ${MEDIA_DIR}/library:/data # Single mount: hardlinks require one mount point, not a shared path prefix
     depends_on:
       - qbittorrent
       - prowlarr
@@ -172,8 +171,7 @@ services:
       TZ: ${TZ}
     volumes:
       - ${MEDIA_DIR}/appdata/radarr:/config
-      - ${MEDIA_DIR}/torrents:/data/torrents
-      - ${MEDIA_DIR}/media/movies:/data/media/movies
+      - ${MEDIA_DIR}/library:/data # Single mount: hardlinks require one mount point, not a shared path prefix
     depends_on:
       - qbittorrent
       - prowlarr
@@ -225,7 +223,7 @@ services:
       TZ: ${TZ}
     volumes:
       - ${MEDIA_DIR}/appdata/bazarr:/config
-      - ${MEDIA_DIR}/media:/data/media # Crucial: Must be identical to Radarr/Sonarr mappings
+      - ${MEDIA_DIR}/library/media:/data/media # Must match the container path Sonarr/Radarr report
     ports:
       - "6767:6767"
     restart: unless-stopped
